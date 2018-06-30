@@ -1,24 +1,56 @@
 <html>
 	<head>
 		<style type="text/css">
+
+			body {
+				background-color: #D3D3D3;
+			}
 			.center {
 			    display: block;
 			    margin-left: auto;
 			    margin-right: auto;
-			    width: 30%;
+			    margin-top: 50px;
+			}
+
+			#navbar {
+				border-radius: 0.2em;
+				background-color: #2e2e38;
+			}
+
+			#navbar img {
+				width: 5em;
+				height: 5em;
+				text-align: center;
+				display: inline-block;
+				color: white;
+				vertical-align: middle;
+			}
+
+			#navbar p:hover {
+				background-color: white;
+				color: black;
+			}
+
+			#navbar p {
+				font-size: 1.2em;
+				width: 6em;
+				line-height: 4em;
+				vertical-align: middle;
+				text-align: center;
+				display: inline-block;
+				color: white;
+				margin: 0;
 			}
 		</style>
 	</head>
 	<body>
-		<img class="center" style="align:center;" src="https://www.emojirequest.com/images/DeadEmoji.jpg">
-		</img>
 
-		<h2 class="center">
-			Technical Difficulties
-		</h2>
-		<p class="center">
-			stand by...
-		</p>
+		<nav id="navbar">
+			<a href="./index.html"><p>Video</p></a>
+			<a href="./report.html"><p>Report</p></a>
+		</nav>
+
+		<iframe class = "center" width="853" height="480" src="https://www.youtube.com/embed/HaUv9vqhaJg" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 
 	</body>
 </html>
