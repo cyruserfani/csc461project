@@ -50,6 +50,96 @@
 			<a href="./CompressionReport.pdf"><p>Report</p></a>
       			<a href="./code.html"><p>Code</p></a>
 		</nav>
+		<code><pre>
+import sys, os, glob
+byteorder = 'big'
+
+def Delta_encoder(old_file, new_file, block_size):
+    global byteorder
+    reading_handle = open(old_file, 'rb')
+    writing_handle = open(new_file, 'wb')
+
+    byte1 = reading_handle.read(block_size)
+    writing_handle.write(byte1)
+
+    while byte1 != b'':
+        byte1_value = int.from_bytes(byte1, byteorder = byteorder)
+        byte2 = reading_handle.read(block_size)
+        byte2_value = int.from_bytes(byte2, byteorder = byteorder)
+        diff = byte2_value - byte1_value
+        operation = 64 if diff >= 0 else 0
+        diff = abs(diff)
+        minimum_count = 1
+        while diff or minimum_count:
+            minimum_count = 0
+            if diff < 64:
+                part_diff = 63&diff
+                diff = diff>>6
+                part_diff = part_diff|128|operation
+            else:
+                part_diff = 127&diff
+                diff = diff>>7
+                if diff == 0:
+                    writing_handle.write(bytes([part_diff]))
+                    writing_handle.write(bytes([128|operation]))
+                    continue
+            writing_handle.write(bytes([part_diff]))
+        byte1 = byte2
+    reading_handle.close()
+    writing_handle.close()
+
+def Delta_decoder(old_file, new_file, block_size):
+    global byteorder
+    reading_handle = open(old_file, 'rb')
+    writing_handle = open(new_file, 'wb+')
+
+    byte1 = reading_handle.read(block_size)
+    byte1_value = int.from_bytes(byte1, byteorder = byteorder)
+
+    byte2 = reading_handle.read(1)
+    byte2_value = int.from_bytes(byte2, byteorder = byteorder)
+
+    writing_handle.write(byte1)
+
+    while byte2 != b'':
+        num_list = [byte2_value]
+        while 128&byte2_value == 0:
+            byte2 = reading_handle.read(1)
+            byte2_value = int.from_bytes(byte2, byteorder = byteorder)
+            num_list.insert(0, byte2_value)
+        operation = 64&byte2_value
+        byte2_value = byte2_value&63
+        diff = byte2_value
+        del num_list[0]
+        for item in num_list:
+            diff = diff<<7
+            diff = diff|item
+        if operation:
+            byte1_value += diff
+        else:
+            byte1_value -= diff
+        for n in reversed(range(block_size)):
+            part_diff = 255<<(n*8)
+            part_diff = part_diff&byte1_value
+            part_diff = part_diff>>(n*8)
+            writing_handle.write(bytes([part_diff]))
+        byte2 = reading_handle.read(1)
+        byte2_value = int.from_bytes(byte2, byteorder = byteorder)
+
+    reading_handle.close()
+    writing_handle.close()
+
+if __name__=='__main__':
+    block_size = 6
+    Delta_encoder('TestData.txt', 'EncodedTestData', block_size)
+    Delta_decoder("EncodedTestData", 'DecodedTestData.txt', block_size)
+    exit()
+    file_directory = '/Datasets/BMPDataset'
+    os.chdir(os.getcwd()+file_directory)
+    for f in glob.glob('*.bmp'):
+        Delta_encoder(f, 'encoded' + f, block_size)
+        Delta_decoder('encoded' + f, 'decoded' + f, block_size)
+</pre></code>
 
 	</body>
 </html>
