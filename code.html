@@ -50,7 +50,9 @@
 			<a href="./CompressionReport.pdf"><p>Report</p></a>
       			<a href="./code.html"><p>Code</p></a>
 		</nav>
+		<h2>FILE 1: DeltaEncoding.py</h2>
 		<code><pre>
+
 import sys, os, glob
 byteorder = 'big'
 
@@ -140,6 +142,150 @@ if __name__=='__main__':
         Delta_encoder(f, 'encoded' + f, block_size)
         Delta_decoder('encoded' + f, 'decoded' + f, block_size)
 </pre></code>
+________________________________________________________________________________________________________________________
+		<br>
+			<h2>FILE 2: RunLengthEncoding.py</h2>
+<code><pre>
 
+import sys, os, glob
+byteorder = 'big'
+
+def Packbits_encoding(old_file, new_file, block_size):
+    reading_handle = open(old_file, 'rb')
+    writing_handle = open(new_file, 'wb')
+
+    byte1 = reading_handle.read(block_size)
+    byte_count = 0
+    byte_string = byte1
+    while byte1:
+        byte2 = reading_handle.read(block_size)
+        if byte1 == byte2:
+            while byte1 == byte2 and byte_count < 127:
+                byte2 = reading_handle.read(block_size)
+                byte_count += 1
+            byte1 = byte2
+        else:
+            byte_count += 128
+            while byte1 != byte2 and byte2 and byte_count < 255:
+                byte_string += byte2
+                byte1 = byte2
+                byte2 = reading_handle.read(block_size)
+                byte_count += 1
+            byte_string = byte_string[:-1]
+            byte_count += -1
+            reading_handle.seek(-1, 1)
+        writing_handle.write(bytes([byte_count]))
+        writing_handle.write(byte_string)
+        byte_string = byte1
+        byte_count = 0
+
+    reading_handle.close()
+    writing_handle.close()
+
+def Packbits_decoding(old_file, new_file):
+    reading_handle = open(old_file, 'rb')
+    writing_handle = open(new_file, 'wb')
+
+    byte1 = int.from_bytes(reading_handle.read(1), 'big')
+    while byte1:
+        if byte1 < 128:
+            byte2 = reading_handle.read(1)
+            for f in range(byte1+1):
+                writing_handle.write(byte2)
+        else:
+            temp_str = reading_handle.read(byte1-127)
+            writing_handle.write(temp_str)
+        byte1 = int.from_bytes(reading_handle.read(1), 'big')
+
+    reading_handle.close()
+    writing_handle.close()
+
+def Zero_Byte_RLE_encoder(old_file, new_file, block_size):
+    reading_handle = open(old_file, 'rb')
+    writing_handle = open(new_file, 'wb')
+
+    byte1 = reading_handle.read(block_size)
+
+    while(byte1):
+        if byte1 != b'\x00':
+            writing_handle.write(byte1)
+            byte1 = reading_handle.read(block_size)
+            continue
+        byte_count = 1
+        while byte1 == b'\x00' and byte_count < 255:
+            byte1 = reading_handle.read(block_size)
+            byte_count += 1
+        byte_count -= 1
+        writing_handle.write(bytes([0,byte_count]))
+
+    reading_handle.close()
+    writing_handle.close()
+
+def Zero_Byte_RLE_decoder(old_file, new_file, block_size):
+    global byteorder
+    reading_handle = open(old_file, 'rb')
+    writing_handle = open(new_file, 'wb')
+
+    byte1 = reading_handle.read(1)
+
+    while(byte1):
+        writing_handle.write(byte1)
+        if byte1 == b'\x00':
+            byte1 = reading_handle.read(1)
+            byte_count = int.from_bytes(byte1, byteorder)
+            for n in range(byte_count-1):
+                writing_handle.write(b'\x00')
+        byte1 = reading_handle.read(1)
+
+    reading_handle.close()
+    writing_handle.close()
+
+def Basic_RLE_encoder(old_file, new_file, block_size):
+
+    reading_handle = open(old_file, 'rb')
+    writing_handle = open(new_file, 'wb')
+
+    byte1 = reading_handle.read(block_size)
+    byte_count = 1
+
+    while(byte1):
+        byte2 = reading_handle.read(block_size)
+        if byte1 == byte2 and byte_count < 255:
+            byte_count += 1
+            continue
+        writing_handle.write(bytes([byte_count]))
+        writing_handle.write(byte1)
+        byte1 = byte2
+        byte_count = 1
+
+    reading_handle.close()
+    writing_handle.close()
+
+def Basic_RLE_decoder(old_file, new_file, block_size):
+    global byteorder
+    reading_handle = open(old_file, 'rb')
+    writing_handle = open(new_file, 'wb')
+
+    byte1 = reading_handle.read(1)
+
+    while(byte1):
+        byte2 = reading_handle.read(block_size)
+        byte_count = int.from_bytes(byte1, byteorder)
+        for n in range(byte_count):
+            writing_handle.write(byte2)
+        byte1 = reading_handle.read(1)
+
+    reading_handle.close()
+    writing_handle.close()
+
+if __name__ == '__main__':
+    block_size = 1
+    file_directory = '/Datasets/WAVDataset'
+    os.chdir(os.getcwd()+file_directory)
+    for f in glob.glob('*.wav'):
+        Packbits_encoding(f, 'encoded' + f, block_size)
+        Packbits_decoding('encoded' + f, 'decoded' + f)
+
+</pre></code>
 	</body>
 </html>
